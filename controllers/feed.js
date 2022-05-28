@@ -1,7 +1,7 @@
 const { validationResult } = require("express-validator");
 const Post = require("../models/post");
 
-exports.getPosts = (req, res, next) => {
+exports.getPosts = (req, res) => {
   return res.status(200).json({
     posts: [
       {
@@ -23,10 +23,10 @@ exports.createPost = (req, res, next) => {
   const { title, content } = req.body;
 
   if (!errors.isEmpty()) {
-    return res.status(422).json({
-      message: "Validation failed, entered data is incorrect",
-      errors: errors.array()
-    });
+    const err = new Error("Validation failed, entered data is incorrect");
+    err.statusCode = 422;
+    return next(err);
+    // throw error;
   }
 
   const post = new Post({
@@ -38,6 +38,7 @@ exports.createPost = (req, res, next) => {
     },
   });
 
+  // noinspection JSUnresolvedFunction
   post.save()
     .then((result) => {
       console.log(result);
@@ -47,6 +48,9 @@ exports.createPost = (req, res, next) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+        return next(err);
+      }
     });
 };
