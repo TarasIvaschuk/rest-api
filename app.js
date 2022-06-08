@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const feedRoutes = require("./routes/feed");
+const authRoutes = require("./routes/auth");
 const path = require("path");
 const multer = require("multer");
 
@@ -38,11 +39,13 @@ app.use((req, res, next) => {
 });
 
 app.use("/feed", feedRoutes);
+app.use("/auth", authRoutes);
 
 app.use((err, req, res, next) => {
+  const data = err.data;
   const status = err.statusCode || 500;
   const message = err.message;
-  res.status(status).json({ message });
+  res.status(status).json({ message, data });
 });
 
 mongoose.connect(process.env.MONGOOSE_CONNECTION_STRING)
