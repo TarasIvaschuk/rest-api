@@ -3,7 +3,6 @@ require("dotenv").config();
 
 module.exports = (req, res, next) => {
   const authHeader = req.get("Authorization");
-  console.log(authHeader);
   if (!authHeader) {
     const error = new Error("Not authorized");
     error.statusCode = 401;
