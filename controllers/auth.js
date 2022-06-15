@@ -71,3 +71,58 @@ exports.login = (req, res, next) => {
       }
     });
 };
+
+exports.status = (req, res, next) => {
+  const userId = req.userId;
+  User.findOne({ userId })
+    .then(user => {
+      if (!user) {
+        const error = new Error("No user is found with this ID!");
+        error.statusCode = 401;
+        throw error;
+      }
+      return user.status;
+    })
+    .then(userStatus => {
+      return res.status(200).json({
+        status: userStatus
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+        return next(err);
+      }
+    });
+};
+
+exports.updateStatus = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const err = new Error("Validation failed, entered data is incorrect");
+    err.statusCode = 422;
+    throw err;
+  }
+  const updatedStatus = req.body.userStatus;
+  User.findById(req.userId)
+    .then(user => {
+      if (!user) {
+        const error = new Error("No user is found with this ID!");
+        error.statusCode = 401;
+        throw error;
+      }
+      user.status = updatedStatus;
+      return user.save();
+    })
+    .then(() => {
+      return res.status(200).json({
+        status: updatedStatus
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+        return next(err);
+      }
+    });
+};
