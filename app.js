@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 app.use("/feed", feedRoutes);
 app.use("/auth", authRoutes);
 
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   const data = err.data;
   const status = err.statusCode || 500;
   const message = err.message;
@@ -50,8 +50,18 @@ app.use((err, req, res, next) => {
 
 mongoose.connect(process.env.MONGOOSE_CONNECTION_STRING)
   .then(() => {
-    app.listen(8080);
-    console.log("connected!");
+    const server = app.listen(8080);
+    console.log("server is listening");
+    const { Server } = require("socket.io");
+    const io = new Server(server, {
+      cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      }
+    });
+    io.on("connection", socket => {
+      console.log("Client connected");
+    });
   })
   .catch((err) => {
     console.log(err);
