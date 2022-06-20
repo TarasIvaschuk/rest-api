@@ -52,7 +52,7 @@ mongoose.connect(process.env.MONGOOSE_CONNECTION_STRING)
   .then(() => {
     const server = app.listen(8080);
     console.log("server is listening");
-    const io = require("socket").init(server);
+    const io = require("./socket").init(server);
     io.on("connection", socket => {
       console.log("Client connected");
     });
