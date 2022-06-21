@@ -14,6 +14,7 @@ exports.getPosts = (req, res, next) => {
     .then(count => {
       totalItems = count;
       return Post.find()
+        .populate("creator")
         .skip((currentPage - 1) * perPage)
         .limit(perPage);
     })
@@ -54,10 +55,12 @@ exports.createPost = (req, res, next) => {
     creator: req.userId
   });
   let creator;
+  let user;
 
   post.save()
     .then(() => {
-      return User.findById(req.userId);
+      user = User.findById(req.userId);
+      return user;
     })
     .then(user => {
       creator = user;
@@ -68,7 +71,7 @@ exports.createPost = (req, res, next) => {
       console.log(data);
       io.getIO().emit("posts", {
         action: "create",
-        post
+        post: { ...post._doc, creator: { _id: req.userId }, name: user.name }
       });
       return res.status(201).json({
         message: "Post created successfully",
@@ -128,6 +131,7 @@ exports.updatePost = (req, res, next) => {
   }
 
   Post.findById(postId)
+    .populate("creator")
     .then(post => {
       if (!post) {
         const err = new Error("Could not find the post");
@@ -135,7 +139,7 @@ exports.updatePost = (req, res, next) => {
         throw err;
       }
 
-      if (post.creator.toString() !== req.userId) {
+      if (post.creator._id.toString() !== req.userId) {
         console.log("throwing an error message ");
         const error = new Error("No authorized to update post");
         error.statusCode = 403;
@@ -150,11 +154,14 @@ exports.updatePost = (req, res, next) => {
       post.imageUrl = imageUrl;
       return post.save();
     })
-    .then((result) =>
+    .then(result => {
+      io.getIO().emit("posts", { action: "update", post: result });
       res.status(200).json({
         message: "Post updated!",
         post: result
-      }))
+      });
+    }
+    )
     .catch(err => {
       if (!err.statusCode) {
         err.statusCode = 500;
